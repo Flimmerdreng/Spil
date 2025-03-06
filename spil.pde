@@ -1,31 +1,35 @@
-PImage characterImg; // Character image
-PImage characterImg2; // Alternative character image when toggled
-PImage startImg; // Start screen image
-int charX = 50; // Character's starting position on X-axis
-int charY; // Character's starting position on Y-axis
-int speed = 10; // Character's movement speed
-int maxSpeed = 20; // Maximum speed when running (hold Shift)
-int slideSpeed = 15; // Speed when sliding
-float charScale = 0.5; // Scaling factor
-float scaleX = 1.0; // Horizontal scale factor
+PImage characterImg;    // Character image
+PImage characterImg2;   // Alternative character image when toggled
+PImage startImg;        // Start screen image
+
+int charX = 50;         // Character's starting X position
+int charY;              // Character's starting Y position
+
+int speed = 10;         // Character's movement speed
+int maxSpeed = 20;      // Maximum speed (unused here, but available)
+int slideSpeed = 15;    // Speed when sliding
+
+float charScale = 0.5;  // Scaling factor for character
+float scaleX = 1.0;     // Horizontal scale modifier
 
 boolean moveLeft = false;
 boolean moveRight = false;
-boolean toggleImage = false; // Toggle image state
-boolean isJumping = false; // Is the character in the air
-boolean isFalling = false; // Is the character falling
-boolean isSliding = false; // Is the character in slide state
-float jumpHeight = 300; // Height the character can jump
-float jumpSpeed = 0; // Speed of the jump
-float maxJumpSpeed = 15; // Maximum jump speed
-float gravity = 1.5; // Gravity effect
+boolean toggleImage = false; // For image animation/toggling
+boolean isJumping = false;   // Is the character jumping?
+boolean isFalling = false;   // Is the character falling?
+boolean isSliding = false;   // Is the character sliding?
+
+float jumpHeight = 300;      // Maximum jump height
+float jumpSpeed = 0;         // Current jump speed
+float maxJumpSpeed = 15;     // Maximum initial jump speed
+float gravity = 1.5;         // Gravity effect
 
 // Background settings
-int bgY = 0; // Background's vertical position
-int bgSpeed = 5; // Speed of background movement
-int groundHeight = 100; // Height of the ground
+int bgY = 0;               // Vertical position of scrolling background
+int bgSpeed = 5;           // Background scroll speed
+int groundHeight = 100;      // Height of the ground (green area)
 
-// Track settings
+// Track settings (for lane control)
 int trackWidth;
 int trackHeight;
 int currentTrack = 1;
@@ -33,7 +37,7 @@ int targetTrack = 1;
 float trackXPos;
 float trackSwitchSpeed = 0.1;
 
-// Image toggle settings
+// Image toggle settings (to animate character)
 int currentToggleInterval = 0;
 int toggleImageInterval = 10;
 
@@ -41,18 +45,24 @@ int startTime;
 int currentTime;
 boolean gameStarted = false;
 
-// Forhindringer
-ArrayList<Obstacle> obstacles = new ArrayList<>();
-int obstacleSpawnRate = 120; // Spawn rate for obstacles
-
 void setup() {
   size(1200, 800);
+  
+  // Load images (ensure they are in your sketch’s "data" folder)
   characterImg = loadImage("Charekter 1.png");
   characterImg2 = loadImage("Charekter 1.1.png");
   startImg = loadImage("Charekter start.png");
+  
+  // Calculate track width based on screen width (3 lanes)
   trackWidth = width / 3;
+  
+  // Set the character's starting Y so it stands on the ground.
   charY = height - groundHeight - (int)(characterImg.height * charScale) / 2;
+  
+  // Initially position the character in lane 1 (center lane)
   trackXPos = trackWidth * currentTrack + trackWidth / 2;
+  
+  // Use centered image mode
   imageMode(CENTER);
 }
 
@@ -61,50 +71,39 @@ void draw() {
     showStartScreen();
     return;
   }
-
+  
+  // Update elapsed time and score (if you want to use it later)
   currentTime = millis() - startTime;
+  
+  // Draw the background (futuristic layered look using rectangles)
   moveBackground();
+  
+  // Smoothly transition the character's lane position if needed
   trackXPos = lerp(trackXPos, trackWidth * targetTrack + trackWidth / 2, trackSwitchSpeed);
-
+  
+  // Draw the character (toggling images for animation)
   drawCharacter();
+  
+  // Future movement functions (expand handleMovement() if desired)
   handleMovement();
   handleJump();
   updateImageToggle();
   handleSlide();
+  
+  // Draw a timer in the top-right (optional)
   drawTimer();
-
-  // Spawn obstacles
-  if (frameCount % obstacleSpawnRate == 0) {
-    obstacles.add(new Obstacle(int(random(3))));
-  }
-
-  // Move and display obstacles
-  for (int i = obstacles.size() - 1; i >= 0; i--) {
-    Obstacle obs = obstacles.get(i);
-    obs.move();
-    obs.display();
-
-    // Check for collision only if the character is not jumping
-    if (obs.hitsCharacter() && !isJumping) {
-      println("Game Over!");
-      noLoop(); // Stop game
-    }
-
-    if (obs.y > height) {
-      obstacles.remove(i);
-    }
-  }
 }
 
 void showStartScreen() {
   background(0);
-  image(startImg, width / 2, height / 2);
+  image(startImg, width/2, height/2);
   textAlign(CENTER, CENTER);
   textSize(32);
   fill(255);
-  text("Click to Start", width / 2, height - 50);
+  text("Click to Start", width/2, height - 50);
 }
 
+// Draw a timer (hours/minutes/seconds/millis)
 void drawTimer() {
   fill(255);
   textSize(32);
@@ -116,17 +115,25 @@ void drawTimer() {
   text(timerString, width - 20, 20);
 }
 
+// Draw the background using layered rectangles
 void moveBackground() {
   bgY += bgSpeed;
   if (bgY >= height) bgY = 0;
+  
+  // Sky
   background(200, 200, 255);
+  
+  // Ground
   fill(0, 255, 0);
   rect(0, height - groundHeight, width, groundHeight);
+  
+  // Two layers of moving background to create a scrolling effect
   fill(135, 206, 235);
   rect(0, bgY - height, width, height);
   rect(0, bgY, width, height);
 }
 
+// Draw the character using toggled images and proper scaling
 void drawCharacter() {
   pushMatrix();
   int trackX = (int)trackXPos;
@@ -148,13 +155,18 @@ void drawCharacter() {
   popMatrix();
 }
 
-void handleMovement() {}
+// (Placeholder) Function to handle other movement (if needed)
+void handleMovement() {
+  // You can add additional movement logic here.
+}
 
+// Handle jumping, including upward motion and applying gravity
 void handleJump() {
   if (isJumping) {
     if (!isFalling) {
       charY -= jumpSpeed;
-      if (charY <= height - groundHeight - jumpHeight) isFalling = true;
+      if (charY <= height - groundHeight - jumpHeight)
+        isFalling = true;
     } else {
       jumpSpeed += gravity;
       charY += jumpSpeed;
@@ -168,6 +180,7 @@ void handleJump() {
   }
 }
 
+// Toggle the character's image for a simple animation effect
 void updateImageToggle() {
   if (currentToggleInterval >= toggleImageInterval && !isJumping && !isSliding) {
     toggleImage = !toggleImage;
@@ -177,6 +190,7 @@ void updateImageToggle() {
   }
 }
 
+// Adjust scaling when sliding
 void handleSlide() {
   if (isSliding) {
     speed = slideSpeed;
@@ -189,6 +203,7 @@ void handleSlide() {
   }
 }
 
+// Start the game on a mouse click
 void mousePressed() {
   if (!gameStarted) {
     gameStarted = true;
@@ -196,6 +211,7 @@ void mousePressed() {
   }
 }
 
+// Keyboard controls for lane switching, jumping, and sliding
 void keyPressed() {
   if (key == 'a' || key == 'A') {
     if (targetTrack > 0) targetTrack--;
@@ -210,36 +226,14 @@ void keyPressed() {
     }
   }
   if (key == 's' || key == 'S') {
-    if (!isJumping && !isSliding) isSliding = true;
+    if (!isJumping && !isSliding)
+      isSliding = true;
   }
 }
 
+// Key release to stop sliding
 void keyReleased() {
-  if (key == 's' || key == 'S') isSliding = false;
-}
-
-// Forhindringsklasse
-class Obstacle {
-  int x, y, width, height;
-  int speed = bgSpeed;
-
-  Obstacle(int track) {
-    this.width = 50;
-    this.height = 50;
-    this.x = track * trackWidth + trackWidth / 2;
-    this.y = -height;
-  }
-
-  void move() {
-    y += speed;
-  }
-
-  void display() {
-    fill(255, 0, 0);
-    rect(x - width / 2, y, width, height);
-  }
-
-  boolean hitsCharacter() {
-    return (y + height > charY && y < charY + (characterImg.height * charScale) && abs(x - trackXPos) < width / 2);
+  if (key == 's' || key == 'S') {
+    isSliding = false;
   }
 }
